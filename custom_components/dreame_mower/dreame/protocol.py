@@ -1,5 +1,6 @@
 import logging
 import random
+import os
 import hashlib
 import json
 import base64
@@ -21,6 +22,18 @@ from .exceptions import DeviceException
 from .const import DREAME_STRINGS
 
 _LOGGER = logging.getLogger(__name__)
+
+# Setup logging with hourly rotation
+LOG_DIR = "/home/pi/dreamelogs"
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, "mqtt_log.log")
+
+logger = logging.getLogger("MQTTLogger")
+logger.setLevel(logging.DEBUG)
+handler = logging.handlers.TimedRotatingFileHandler(LOG_FILE, when="H", interval=1, backupCount=24)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 class DreameMowerDeviceProtocol(MiIOProtocol):
@@ -179,6 +192,7 @@ class DreameMowerDreameHomeCloudProtocol:
                 self._client_connected = True
                 _LOGGER.info("Connected to the device client")
             client.subscribe(f"/{self._strings[7]}/{self._did}/{self._uid}/{self._model}/{self._country}/")
+            logger.info(f"Subscribed to /{self._strings[7]}/{self._did}/{self._uid}/{self._model}/{self._country}/")
             if self._connected_callback:
                 try:
                     self._connected_callback()
@@ -204,6 +218,7 @@ class DreameMowerDreameHomeCloudProtocol:
 
     @staticmethod
     def _on_client_message(client, self, message):
+        logger.info(f"Received message on topic '{message.topic}': {message.payload}")
         if self._message_callback:
             try:
                 _LOGGER.error("Message received: %s", message.payload.decode("utf-8"))
