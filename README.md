@@ -2,6 +2,8 @@
 
 # Dreame lawn mower integration for Home Assistant
 
+Testing features added to @bhuebschen version.
+
 First working alpha version of the dreame-mower integration.
 
 Please not that this is a modified version of Tasshack's "Dreame Vacuum" integration to work with the lawn mower, in this state it may causes a lot of error-messages.

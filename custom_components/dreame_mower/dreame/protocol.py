@@ -20,6 +20,19 @@ from miio.miioprotocol import MiIOProtocol
 from .exceptions import DeviceException
 from .const import DREAME_STRINGS
 
+# Setup logging for MQTT messages with hourly rotation
+import os
+
+# Ensure log directory exists
+os.makedirs("/home/pi/dreamelogs/", exist_ok=True)
+
+log_formatter = logging.Formatter('%(asctime)s - %(message)s')
+log_handler = TimedRotatingFileHandler("/home/pi/dreamelogs/mqtt_logs.log", when="H", interval=1, backupCount=24)
+log_handler.setFormatter(log_formatter)
+mqtt_logger = logging.getLogger("mqtt_logger")
+mqtt_logger.setLevel(logging.INFO)
+mqtt_logger.addHandler(log_handler)
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -204,6 +217,16 @@ class DreameMowerDreameHomeCloudProtocol:
 
     @staticmethod
     def _on_client_message(client, self, message):
+
+        # Log the MQTT message received
+        topic = message.topic
+        payload = message.payload.decode('utf-8', errors='ignore')
+        mqtt_logger.info(f"MQTT Message Received | Topic: {topic} | Payload: {payload}")
+
+        # Log parent topic (remove last segment of topic path)
+        parent_topic = "/".join(topic.split("/")[:-1])
+        if parent_topic:
+            mqtt_logger.info(f"MQTT Parent Topic | Topic: {parent_topic} | Payload: {payload}")
         if self._message_callback:
             try:
                 _LOGGER.error("Message received: %s", message.payload.decode("utf-8"))
